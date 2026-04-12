@@ -1,0 +1,11 @@
+path_generator:
+  ros__parameters:
+    path_x: [1.0, 1.0, 0.0, 0.0]
+    path_y: [0.0, 1.0, 1.0, 0.0]
+    mode: "v"
+    #mode: "t"
+    linear_vel: 0.5
+    angular_vel: 0.3
+    #target_time: 25.0
+
+
