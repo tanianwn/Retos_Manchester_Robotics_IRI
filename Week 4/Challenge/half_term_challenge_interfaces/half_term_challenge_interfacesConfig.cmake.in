@@ -1,0 +1,14 @@
+# - Config file for the half_term_challenge_interfaces package
+# It defines the following variables
+#  half_term_challenge_interfaces_INCLUDE_DIRS - include directories for FooBar
+#  half_term_challenge_interfaces_LIBRARIES    - libraries to link against
+#  half_term_challenge_interfaces_EXECUTABLE   - the bar executable
+
+set(half_term_challenge_interfaces_INCLUDE_DIRS "@CONF_INCLUDE_DIRS@")
+
+# Our library dependencies (contains definitions for IMPORTED targets)
+include("${half_term_challenge_interfaces_DIR}/export_half_term_challenge_interfaces.cmake")
+
+# These are IMPORTED targets created by half_term_challenge_interfacesTargets.cmake
+
+
