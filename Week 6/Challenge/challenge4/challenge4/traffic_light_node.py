@@ -130,7 +130,7 @@ class TrafficLightNode(Node):
             result_img = cv.drawKeypoints(result_img, kp_ganador, np.array([]), color_debug, 
                                          cv.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
         
-        # Textos en pantalla para que puedas calibrarlo fácilmente
+        # Textos en pantalla para calibrar
         cv.putText(result_img, f"Pub: {letra_final} | Color: {letra_detectada}", (10, 30), 
                    cv.FONT_HERSHEY_SIMPLEX, 0.7, color_debug, 2)
         cv.putText(result_img, f"Tamano Luz: {tamano_maximo:.1f}", (10, 60), 
