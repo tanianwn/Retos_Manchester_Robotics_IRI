@@ -1,7 +1,7 @@
 import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
-from std_msgs.msg import String  # <-- Usando el mensaje estándar String
+from std_msgs.msg import String  
 from cv_bridge import CvBridge
 from ultralytics import YOLO
 import numpy as np
