@@ -13,12 +13,12 @@ class TrafficLightNode(Node):
 
         self.bridge = CvBridge()
 
-        # 1. CONFIGURACIÓN DEL DETECTOR DE BLOBS
+        # Configuración de detector de Blobs
         params = cv.SimpleBlobDetector_Params()
         params.filterByColor = True
         params.blobColor = 255
         params.filterByArea = True
-        params.minArea = 60  # Permitimos ver colores desde lejos
+        params.minArea = 60  
         params.maxArea = 50000
         params.filterByCircularity = True
         params.minCircularity = 0.76
@@ -26,12 +26,12 @@ class TrafficLightNode(Node):
         params.filterByInertia = False
         self.detector = cv.SimpleBlobDetector_create(params)
 
-        # 2. SUSCRIPTOR Y PUBLICADORES
+        # Suscriptores y publicadores
         self.subscription = self.create_subscription(Image, '/video_source/raw', self.camera_callback, 10)
         self.state_pub = self.create_publisher(String, '/semaforo_estado', 10)
         self.image_pub = self.create_publisher(Image, '/image_processing/result', 10)
 
-        self.get_logger().info('Nodo de Semáforo: Distancia basada en el TAMAÑO DEL COLOR')
+        self.get_logger().info('Nodo de Semáforo')
 
     def camera_callback(self, msg):
         try:
@@ -41,13 +41,11 @@ class TrafficLightNode(Node):
 
         cv_img = cv.convertScaleAbs(cv_img, alpha=1.0, beta=-10)
 
-        # --- PROCESAMIENTO ---
+        # Procesamiento
         blurred = cv.GaussianBlur(cv_img, (5, 5), 0)
         hsv = cv.cvtColor(blurred, cv.COLOR_BGR2HSV)
 
-        # =================================================================
-        # MÁSCARAS DE COLOR (Tu lógica original intacta)
-        # =================================================================
+        #Máscaras de color
         mask_red = cv.bitwise_or(
             cv.inRange(hsv, np.array([0, 50, 150]), np.array([6, 255, 255])),
             cv.inRange(hsv, np.array([170, 50, 120]), np.array([180, 255, 255]))
@@ -83,9 +81,7 @@ class TrafficLightNode(Node):
         kp_yellow = self.detector.detect(mask_yellow)
         kp_green = self.detector.detect(mask_green)
 
-        # =================================================================
-        # LÓGICA DE ESTADO Y TAMAÑO
-        # =================================================================
+        #Lógica de estados
         letra_detectada = "N"
         color_debug = (255, 255, 255)
         tamano_maximo = 0
@@ -113,25 +109,21 @@ class TrafficLightNode(Node):
                 color_debug = (0, 255, 0)
                 kp_ganador = [kp]
 
-        # =================================================================
-        # MAGIA DE LA DISTANCIA A 35 CM
-        # =================================================================
-        # --- AQUÍ PONES EL TAMAÑO DE LA LUZ QUE LEAS A 35 CM ---
+        #Se ajusta un umbral aproximado a la distancia a la que se detecta el color
         UMBRAL_TAMANO_LUZ_35CM = 26.0  # <--- AJUSTA ESTE NÚMERO
-        # -------------------------------------------------------
 
         letra_final = "N" # Por defecto, si está lejos, enviamos "N"
         
-        # SI el tamaño del blob es mayor a nuestro umbral, significa que ya llegamos a 35cm
+        # Si el tamaño del blob es mayor a nuestro umbral, significa que está a aproximadamente esa distancia
         if tamano_maximo > UMBRAL_TAMANO_LUZ_35CM:
             letra_final = letra_detectada
 
-        # --- PUBLICACIÓN ---
+        #Publicación
         msg_letra = String()
         msg_letra.data = letra_final
         self.state_pub.publish(msg_letra)
 
-        # --- DIBUJO PARA LA PANTALLA ---
+        # Pantalla
         result_img = cv_img.copy()
         
         if kp_ganador:
