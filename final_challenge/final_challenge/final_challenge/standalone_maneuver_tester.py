@@ -22,7 +22,7 @@ class StandaloneManeuverTester(Node):
         self.in_maneuver = False
         self.maneuver_type = None
 
-        self.get_logger().info('✅ Tester de Odometría Independiente Activo.')
+        self.get_logger().info('Tester de Odometría')
 
     def wrap_to_pi(self, angle):
         return (angle + np.pi) % (2 * np.pi) - np.pi
@@ -44,7 +44,7 @@ class StandaloneManeuverTester(Node):
         self.in_maneuver = True
         self.maneuver_type = maneuver_type
         self.start_pose = list(self.pose)
-        self.get_logger().info(f'🚀 Ejecutando movimiento directo: {maneuver_type.upper()}')
+        self.get_logger().info(f'Ejecutando movimiento directo: {maneuver_type.upper()}')
 
     def execute_maneuver(self):
         dx = self.pose[0] - self.start_pose[0]
@@ -53,10 +53,10 @@ class StandaloneManeuverTester(Node):
         delta_theta = abs(self.wrap_to_pi(self.pose[2] - self.start_pose[2]))
         
         t_msg = Twist()
-        
-        # --- AQUÍ TUNEAS TUS VELOCIDADES Y DISTANCIAS ---
+
+        #Velocidades y distancias
         if self.maneuver_type == "ahead":
-            if distance >= 0.45:  # Distancia objetivo en metros
+            if distance >= 0.45: 
                 self.end_maneuver()
                 return
             t_msg.linear.x = 0.08
@@ -82,7 +82,7 @@ class StandaloneManeuverTester(Node):
         self.in_maneuver = False
         self.maneuver_type = None
         self.stop_robot()
-        self.get_logger().info('✅ Movimiento completado. Motores detenidos.')
+        self.get_logger().info('Movimiento completado')
 
     def stop_robot(self):
         self.cmd_pub.publish(Twist())
@@ -90,12 +90,12 @@ class StandaloneManeuverTester(Node):
 def cli_menu(node):
     while rclpy.ok():
         print("\n" + "="*40)
-        print("🤖 TESTER DIRECTO DE MOTORES Y ODOMETRÍA 🤖")
+        print("TESTER DIRECTO DE MOTORES Y ODOMETRÍA")
         print("="*40)
         print("1. Girar Izquierda (90 grados)")
         print("2. Girar Derecha (90 grados)")
         print("3. Avanzar Recto (18 cm)")
-        print("4. Detener Robot (Emergencia)")
+        print("4. Detener Robot")
         print("5. Salir")
         
         choice = input("Elige una acción (1-5): ")
@@ -109,14 +109,14 @@ def cli_menu(node):
         elif choice == '4':
             node.in_maneuver = False
             node.stop_robot()
-            print("🛑 Detenido de emergencia.")
+            print("Detenido de emergencia.")
         elif choice == '5':
             print("Saliendo...")
             node.stop_robot()
             rclpy.shutdown()
             break
         else:
-            print("❌ Opción inválida.")
+            print("Opción inválida.")
             
         time.sleep(0.5)
 
