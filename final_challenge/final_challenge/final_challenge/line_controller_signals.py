@@ -103,14 +103,13 @@ class LineController(Node):
 
         if nueva_senal != "Ninguno" and nueva_senal != self.yolo_signal:
             self.yolo_signal = nueva_senal
-            flecha = "➡️" if nueva_senal == "turn_right_ahead" else "⬅️" if nueva_senal == "turn_left_ahead" else "⬆️"
-            self.get_logger().info(f'{flecha} [Visión YOLO] Señal: {nueva_senal}')
+            self.get_logger().info(f'Señal: {nueva_senal}')
 
         if nueva_senal == "stop":
             if not self.stop_signal_active:
                 self.stop_signal_active = True
                 
-                # REQUISITO 2: Prioridad de STOP sobre Rojo Falso
+                # Prioridad de STOP sobre Rojo Falso
                 if self.traffic_state == "R" or self.waiting_for_green:
                     self.traffic_state = "N"
                     self.waiting_for_green = False
@@ -172,7 +171,7 @@ class LineController(Node):
             if self.state == "SIGUIENDO" and not self.cooldown_active:
                 self.state = "EVALUANDO"
                 self.wait_start_time = self.get_clock().now()
-                self.traffic_eval_count = 0  # NUEVO: Reiniciamos el contador de seguridad del semáforo
+                self.traffic_eval_count = 0  # Reiniciamos el contador de seguridad del semáforo
                 self.get_logger().warn('1. Intersección detectada, esperando a detección de YOLO')
 
     def master_control_loop(self):
