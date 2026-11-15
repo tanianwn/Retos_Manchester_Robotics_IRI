@@ -7,7 +7,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import numpy as np
 
-# --- CONFIGURACIÓN DE VISIÓN ---
+# Configuración de imagen
 IMAGE_WIDTH  = 640
 IMAGE_HEIGHT = 480
 
@@ -16,7 +16,7 @@ INTERSECTION_ROI_X_MIN = 80
 INTERSECTION_ROI_X_MAX = 560  
 SCANLINES_INTERSECTION_Y = [380, 410, 440, 470] #se bajaron 20 pixeles, regresar si no funciona
 
-# PROCESAMIENTO ÓPTICO Y FILTRADO DE RUIDO
+# Filtrado de ruido
 ALPHA_CONTRAST   = 0.4
 BETA_BRIGHTNESS  = -30
 MIN_LINE_WIDTH   = 12    
@@ -39,7 +39,7 @@ class IntersectionDetector(Node):
         self.intersection_pub = self.create_publisher(Bool, '/puzzlebot/intersection', 10)
         self.inter_debug_pub = self.create_publisher(Image, '/puzzlebot/camera/intersection_debug', 10)
         
-        self.get_logger().info('Nodo Intersection Detector inicializado (Fila única sensible + 4 Blobs).')
+        self.get_logger().info('Nodo Intersection Detector inicializado')
 
     def image_callback(self, msg):
         try:
@@ -108,7 +108,7 @@ class IntersectionDetector(Node):
 
             # Logger en terminal
             if intersection_detected:
-                self.get_logger().warn(f"🚨 [INTERSECCIÓN DETECTADA] Enviando True ({scanlines_confirming_intersection} líneas válidas).")
+                self.get_logger().warn(f"[INTERSECCIÓN DETECTADA] Enviando True ({scanlines_confirming_intersection} líneas válidas).")
 
             # 5. Capa visual HUD para el Debug
             mode = 'INTERSECTION' if intersection_detected else 'NORMAL'
