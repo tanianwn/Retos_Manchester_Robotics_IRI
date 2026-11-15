@@ -6,7 +6,7 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import Float32, String, Bool
 import numpy as np
 
-# Configuración PID original (¡Intacta!)
+# Configuración PID 
 KP, KP_TURN = 0.0007, 0.0034 
 KI, KD = 0.0000, 0.0095 
 EMA_ALPHA = 0.75
@@ -18,23 +18,23 @@ class LineController(Node):
     def __init__(self):
         super().__init__('line_controller')
         
-        # --- EL CEREBRO: LA MÁQUINA DE ESTADOS ---
+        # Máquina de estados
         self.state = "SIGUIENDO"
         
-        # --- NUEVO: Seguro de cámara ---
+        # Seguro de cámara 
         self.camara_lista = False  # El robot no se moverá hasta que esto sea True
         
-        # --- Suscriptores ---
+        # Suscriptores
         self.error_sub = self.create_subscription(Float32, '/puzzlebot/line_error', self.error_cb, 10)
         self.traffic_sub = self.create_subscription(String, '/semaforo_estado', self.traffic_cb, 10)
         self.inter_sub = self.create_subscription(Bool, '/puzzlebot/intersection', self.intersection_cb, 10)
         self.yolo_sub = self.create_subscription(String, '/yolo/detecciones', self.yolo_cb, 10)
         self.odom_sub = self.create_subscription(Odometry, '/odom', self.odom_cb, 10)
         
-        # --- Publicador ---
+        # Publicador
         self.cmd_pub = self.create_publisher(Twist, '/cmd_vel', 10)
 
-        # Bucle maestro a 20Hz
+        # Bucle a 20Hz
         self.master_timer = self.create_timer(0.05, self.master_control_loop)
         
         # Variables de Memoria
@@ -57,7 +57,7 @@ class LineController(Node):
         # Bandera para saber si la maniobra se hace en amarillo
         self.maneuver_is_yellow = False
         
-        # NUEVO: Contador de validación del semáforo en intersección
+        # Contador de validación del semáforo en intersección
         self.traffic_eval_count = 0
 
         self.cooldown_active = False
@@ -67,17 +67,17 @@ class LineController(Node):
         self.yolo_speed_mult = 1.0
         self.stop_signal_active = False
 
-        self.get_logger().info('✅ Nodo Activo. Semáforo estricto y Espera de Señal infinita.')
-        self.get_logger().info('⏳ Esperando datos de la cámara para liberar motores...')
+        self.get_logger().info('Nodo Activo')
+        self.get_logger().info('Esperando datos de la cámara...')
 
     def wrap_to_pi(self, angle):
         return (angle + np.pi) % (2 * np.pi) - np.pi
 
     def error_cb(self, msg):
-        # --- NUEVO: Liberar el seguro en el primer mensaje ---
+        #Primero se verifica si la cámara está enviando imagen
         if not self.camara_lista:
             self.camara_lista = True
-            self.get_logger().info('🟢 ¡Cámara conectada y enviando datos! Arrancando motores.')
+            self.get_logger().info('Cámara conectada y enviando datos')
             
         self.current_line_error = msg.data
 
@@ -90,7 +90,7 @@ class LineController(Node):
         self.pose[2] = np.arctan2(siny_cosp, cosy_cosp)
 
     def yolo_cb(self, msg):
-        # REQUISITO: Ignorar TODO si estamos maniobrando
+        #Ignorar todo si estamos maniobrando
         if self.state == "MANIOBRANDO":
             return
 
@@ -116,7 +116,7 @@ class LineController(Node):
                     self.waiting_for_green = False
                     self.traffic_speed_mult = 1.0
                     
-                self.get_logger().warn('🛑 Señal STOP detectada. (Ignorando rojos)')
+                self.get_logger().warn('Señal STOP detectada')
         else:
             if self.stop_signal_active and nueva_senal != "stop":
                 self.stop_signal_active = False
@@ -127,36 +127,35 @@ class LineController(Node):
             self.yolo_speed_mult = 1.0
 
     def traffic_cb(self, msg):
-        # REQUISITO: Ignorar TODO el semáforo si estamos enfocados en maniobrar
+        #Ignorar el semáforo si estamos maniobrando
         if self.state == "MANIOBRANDO":
             return
 
         current_light = msg.data
         
-        # NUEVO: Contar publicaciones mientras está en intersección para asegurar validez
+        #Contar publicaciones mientras está en intersección para asegurar validez
         if self.state == "EVALUANDO":
             self.traffic_eval_count += 1
         
-        # REQUISITO 2: Ignorar completamente el semáforo rojo si estamos en un STOP
+        #Ignorar completamente el semáforo rojo si estamos en un STOP
         if current_light == "R" and self.stop_signal_active:
             return
 
-        # REQUISITO 3: Arreglo de Loggers para que no sean tardíos ni hagan spam
         if current_light == "R":
             if self.traffic_state != "R":
-                self.get_logger().warn('🚦 Semáforo rojo')
+                self.get_logger().warn('Semáforo rojo')
             self.traffic_state = "R"
             self.waiting_for_green = True
             self.traffic_speed_mult = 0.0
         elif current_light == "A":
             if not self.waiting_for_green:
                 if self.traffic_state != "A":
-                    self.get_logger().warn('🚦 Semáforo amarillo')
+                    self.get_logger().warn('Semáforo amarillo')
                 self.traffic_state = "A"
                 self.traffic_speed_mult = 0.4
         elif current_light == "V":
             if self.traffic_state != "V":
-                self.get_logger().warn('🚦 Semáforo verde')
+                self.get_logger().warn('Semáforo verde')
             self.traffic_state = "V"
             self.waiting_for_green = False
             self.traffic_speed_mult = 1.0
@@ -174,12 +173,12 @@ class LineController(Node):
                 self.state = "EVALUANDO"
                 self.wait_start_time = self.get_clock().now()
                 self.traffic_eval_count = 0  # NUEVO: Reiniciamos el contador de seguridad del semáforo
-                self.get_logger().warn('🛑 1. INTERSECCIÓN DETECTADA: Frenando y esperando señal YOLO...')
+                self.get_logger().warn('1. Intersección detectada, esperando a detección de YOLO')
 
     def master_control_loop(self):
         t_msg = Twist() 
 
-        # --- NUEVO: Cortador de corriente por software ---
+        #Cortador de corriente por software
         if not self.camara_lista:
             t_msg.linear.x = 0.0
             t_msg.angular.z = 0.0
@@ -195,17 +194,17 @@ class LineController(Node):
             
             # Dejamos que asiente 0.5s para perder inercia
             if elapsed >= 0.9:
-                # El robot se quedará atorado en este bloque "if" hasta que detecte algo de la lista
+                # El robot se quedará atorado en este bloque if hasta que detecte algo de la lista
                 valid_signal = self.yolo_signal in ["ahead_only", "turn_right_ahead", "turn_left_ahead"]
                 
-                # NUEVO: Exigimos al menos 6 publicaciones del semáforo para darle la oportunidad de leerlo bien
+                #Exigimos al menos 6 publicaciones del semáforo para darle la oportunidad de leerlo bien
                 if valid_signal and self.traffic_eval_count >= 6:
-                    # REQUISITO 1: Detenido en rojo hasta verde
+                    #Detenido en rojo hasta verde
                     if self.traffic_state == "R":
                         pass  # No avanza a MANIOBRANDO mientras siga en Rojo
                     else:
                         senal_final = self.yolo_signal
-                        self.get_logger().info(f'👀 2. Señal: {senal_final} | Semáforo: {self.traffic_state}')
+                        self.get_logger().info(f'2. Señal: {senal_final} | Semáforo: {self.traffic_state}')
                         
                         self.maneuver_type = senal_final
                         self.start_pose = list(self.pose)
@@ -213,10 +212,10 @@ class LineController(Node):
                         self.maneuver_start_time = self.get_clock().now()
                         self.yolo_signal = "Ninguno" 
                         
-                        # REQUISITO 1: Guardar si se ejecutará en amarillo para reducir velocidad
+                        #Guardar si se ejecutará en amarillo para reducir velocidad
                         self.maneuver_is_yellow = (self.traffic_state == "A")
                         
-                        self.get_logger().info(f'🚀 3. Ejecutando Rutina: {self.maneuver_type.upper()}')
+                        self.get_logger().info(f'3. Ejecutando Rutina: {self.maneuver_type.upper()}')
 
         elif self.state == "MANIOBRANDO":
             dx = self.pose[0] - self.start_pose[0]
@@ -228,18 +227,17 @@ class LineController(Node):
 
             # Condición de escape 1: Intersección detectada
             if elapsed_maneuver > 1.5 and self.last_inter_msg:
-                self.get_logger().warn('🏁 ¡Siguiente línea detectada! Cediendo control al PID.')
+                self.get_logger().warn('Siguiente línea detectada, cediendo control al PID.')
                 self.terminar_maniobra()
                 return
             
             # Condición de escape 2: Timeout de seguridad
             if elapsed_maneuver > 5.0:
-                self.get_logger().warn('⏱️ Timeout de maniobra. Forzando regreso al seguidor.')
+                self.get_logger().warn('Timeout de maniobra. Regresando al seguidor.')
                 self.terminar_maniobra()
                 return
 
-            # REQUISITO 1: Reducir velocidad lineal y angular proporcionalmente si es amarillo
-            # Al reducir ambas en la misma proporción, el radio de 20cm NO cambia.
+            #Reducir velocidad lineal y angular proporcionalmente si es amarillo
             vel_mult = 0.5 if self.maneuver_is_yellow else 1.0
 
             if self.maneuver_type in ["ahead_only", "ahead"]:
@@ -291,7 +289,7 @@ class LineController(Node):
         self.state = "SIGUIENDO"
         self.cooldown_active = True
         self.maneuver_is_yellow = False # Reiniciamos estado
-        self.get_logger().info('✅ 4. Rutina completada. Regresando a Seguidor de Línea.')
+        self.get_logger().info('4. Rutina completada. Regresando a Seguidor de Línea.')
         self.cooldown_timer = self.create_timer(2.5, self.end_cooldown)
 
     def end_cooldown(self):
@@ -299,7 +297,7 @@ class LineController(Node):
             self.cooldown_timer.destroy()
             self.cooldown_timer = None
         self.cooldown_active = False
-        self.get_logger().info('🛡️ Cooldown finalizado. Buscando nuevas intersecciones.')
+        self.get_logger().info('Cooldown finalizado. Buscando nuevas intersecciones.')
 
 def main(args=None):
     rclpy.init(args=args)
