@@ -44,7 +44,7 @@ class LineController(Node):
         # Si se reporta una intersección y el robot aún no ha reaccionado a ella
         if msg.data and not self.intersection_stop:
             self.intersection_stop = True
-            self.get_logger().warn('🚨 ¡INTERSECCIÓN DETECTADA! Aplicando freno de mano e interrumpiendo navegación.')
+            self.get_logger().warn('INTERSECCIÓN DETECTADA')
 
     def traffic_cb(self, msg):
         current_light = msg.data
@@ -52,17 +52,17 @@ class LineController(Node):
             self.traffic_state = "R"
             self.waiting_for_green = True
             self.speed_multiplier = 0.0
-            self.get_logger().info('Semáforo ROJO: Deteniendo...')
+            self.get_logger().info('Semáforo ROJO')
         elif current_light == "A":
             if not self.waiting_for_green:
                 self.traffic_state = "A"
                 self.speed_multiplier = 0.7
-                self.get_logger().info('Semáforo AMARILLO: Reduciendo velocidad.')
+                self.get_logger().info('Semáforo AMARILLO')
         elif current_light == "V":
             self.traffic_state = "V"
             self.waiting_for_green = False
             self.speed_multiplier = 1.0
-            self.get_logger().info('Semáforo VERDE: Adelante.')
+            self.get_logger().info('Semáforo VERDE')
         elif current_light == "N":
             if not self.waiting_for_green:
                 self.traffic_state = "N"
@@ -84,7 +84,7 @@ class LineController(Node):
         # 1. Suavizado del error (Filtro EMA)
         self.ema_error = (EMA_ALPHA * current_error) + ((1.0 - EMA_ALPHA) * self.ema_error)
         
-        # 2. Término Integral (Anti-windup)
+        # 2. Término Integral
         self.integral_error = float(np.clip(self.integral_error + self.ema_error, -2000, 2000))
         
         # 3. Derivada
@@ -94,7 +94,7 @@ class LineController(Node):
         # 4. Asignación dinámica de KP
         active_kp = KP_TURN if abs(self.ema_error) >= TURNING_THRESHOLD else KP
 
-        # 5. Ley de Control PID
+        # 5. Control PID
         steering = -(active_kp * self.ema_error + KI * self.integral_error + KD * derivative)
         
         t_msg = Twist()
@@ -120,7 +120,7 @@ def main(args=None):
         node.get_logger().info('Interrupción por teclado detectada.')
     finally:
         node.stop_robot()
-        node.get_logger().info('Cerrando de forma segura... Motores apagados.')
+        node.get_logger().info('Cerrando de forma segura')
         node.destroy_node()
         rclpy.shutdown()
 
